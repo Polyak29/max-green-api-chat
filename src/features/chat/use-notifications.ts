@@ -72,7 +72,7 @@ export const useNotifications = () => {
         try {
           const notification = await receiveNotification(
             credentials,
-            20,
+            5,
             abortController.signal,
           );
 

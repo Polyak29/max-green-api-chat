@@ -33,17 +33,29 @@ const buildInstancePath = (
   return `/waInstance${id}${suffix}${token}`;
 };
 
+const isAllowedGreenHost = (apiUrl: string) => {
+  try {
+    const url = new URL(apiUrl);
+    const host = url.hostname;
+    return (
+      url.protocol === "https:" &&
+      (host === "api.greenapi.com" ||
+        host === "api.green-api.com" ||
+        host.endsWith(".green-api.com"))
+    );
+  } catch {
+    return false;
+  }
+};
+
 const resolveRequestUrl = (
   credentials: GreenApiCredentials,
   path: string,
 ) => {
   const apiUrl = normalizeApiUrl(credentials.apiUrl);
 
-  if (
-    import.meta.env.DEV &&
-    (apiUrl === DEFAULT_API_URL || apiUrl === "https://api.green-api.com")
-  ) {
-    return `/green-api${path}`;
+  if (isAllowedGreenHost(apiUrl)) {
+    return `/api/green${path}`;
   }
 
   return `${apiUrl}${path}`;
@@ -59,6 +71,10 @@ const request = async <T>(
   const headers: HeadersInit = {
     Accept: "application/json",
   };
+
+  if (url.startsWith("/api/green")) {
+    headers["X-Green-Base"] = normalizeApiUrl(credentials.apiUrl);
+  }
 
   if (options.body !== undefined) {
     headers["Content-Type"] = "application/json";

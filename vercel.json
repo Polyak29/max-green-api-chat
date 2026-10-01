@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/green/[...path].ts": {
+      "maxDuration": 10
+    }
+  }
+}
