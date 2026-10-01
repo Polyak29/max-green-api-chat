@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/green/[...path].ts": {
+    "api/proxy.ts": {
       "maxDuration": 10
     }
   }

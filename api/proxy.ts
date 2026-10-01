@@ -1,11 +1,7 @@
-import { isAllowedGreenBase } from "../allowed-host";
-
 type ProxyRequest = {
   method?: string;
-  url?: string;
   headers: Record<string, string | string[] | undefined>;
   body?: unknown;
-  query: Record<string, string | string[] | undefined>;
 };
 
 type ProxyResponse = {
@@ -22,20 +18,37 @@ const headerValue = (
   return Array.isArray(value) ? value[0] : value;
 };
 
+const isAllowedGreenBase = (value: string) => {
+  try {
+    const url = new URL(value);
+    const host = url.hostname;
+
+    return (
+      url.protocol === "https:" &&
+      (host === "api.greenapi.com" ||
+        host === "api.green-api.com" ||
+        host.endsWith(".green-api.com"))
+    );
+  } catch {
+    return false;
+  }
+};
+
 const handler = async (request: ProxyRequest, response: ProxyResponse) => {
   const base = headerValue(request.headers, "x-green-base")?.replace(/\/+$/, "");
+  const greenPath = headerValue(request.headers, "x-green-path") ?? "";
 
   if (!base || !isAllowedGreenBase(base)) {
     response.status(400).send("Недопустимый адрес GREEN-API");
     return;
   }
 
-  const segments = request.query.path;
-  const path = Array.isArray(segments) ? segments.join("/") : segments ?? "";
-  const incoming = new URL(request.url ?? "/", "http://localhost");
-  const target = new URL(`${base}/${path}`);
-  target.search = incoming.search;
+  if (!greenPath.startsWith("/waInstance") || greenPath.includes("..")) {
+    response.status(400).send("Недопустимый путь GREEN-API");
+    return;
+  }
 
+  const target = new URL(`${base}${greenPath}`);
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   const upstream = await fetch(target, {
     method: request.method,
@@ -43,7 +56,10 @@ const handler = async (request: ProxyRequest, response: ProxyResponse) => {
       Accept: "application/json",
       ...(hasBody ? { "Content-Type": "application/json" } : {}),
     },
-    body: hasBody && request.body !== undefined ? JSON.stringify(request.body) : undefined,
+    body:
+      hasBody && request.body !== undefined
+        ? JSON.stringify(request.body)
+        : undefined,
   });
 
   const text = await upstream.text();

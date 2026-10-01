@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
-import { isAllowedGreenBase } from "./api/allowed-host";
+import { isAllowedGreenBase } from "./api/allowed-host.ts";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,16 +13,18 @@ const greenApiDevProxy = (): Plugin => ({
   configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
       const requestUrl = req.url ?? "";
-      if (!requestUrl.startsWith("/api/green/")) {
+      if (!requestUrl.startsWith("/api/proxy")) {
         next();
         return;
       }
 
       const baseHeader = req.headers["x-green-base"];
+      const pathHeader = req.headers["x-green-path"];
       const base = (Array.isArray(baseHeader) ? baseHeader[0] : baseHeader)?.replace(
         /\/+$/,
         "",
       );
+      const greenPath = Array.isArray(pathHeader) ? pathHeader[0] : pathHeader;
 
       if (!base || !isAllowedGreenBase(base)) {
         res.statusCode = 400;
@@ -30,10 +32,13 @@ const greenApiDevProxy = (): Plugin => ({
         return;
       }
 
-      const incoming = new URL(requestUrl, "http://localhost");
-      const target = new URL(
-        `${base}${incoming.pathname.replace(/^\/api\/green/, "")}${incoming.search}`,
-      );
+      if (!greenPath?.startsWith("/waInstance") || greenPath.includes("..")) {
+        res.statusCode = 400;
+        res.end("Недопустимый путь GREEN-API");
+        return;
+      }
+
+      const target = new URL(`${base}${greenPath}`);
       const chunks: Buffer[] = [];
 
       for await (const chunk of req) {

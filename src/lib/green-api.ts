@@ -55,7 +55,7 @@ const resolveRequestUrl = (
   const apiUrl = normalizeApiUrl(credentials.apiUrl);
 
   if (isAllowedGreenHost(apiUrl)) {
-    return `/api/green${path}`;
+    return "/api/proxy";
   }
 
   return `${apiUrl}${path}`;
@@ -72,8 +72,9 @@ const request = async <T>(
     Accept: "application/json",
   };
 
-  if (url.startsWith("/api/green")) {
+  if (url === "/api/proxy") {
     headers["X-Green-Base"] = normalizeApiUrl(credentials.apiUrl);
+    headers["X-Green-Path"] = path;
   }
 
   if (options.body !== undefined) {

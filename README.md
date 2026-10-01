@@ -17,6 +17,10 @@
 - Инстанс **MAX** в GREEN-API в статусе **authorized**
 - В настройках инстанса **не должен быть задан webhook URL** (иначе очередь HTTP API недоступна)
 
+## Демо
+
+https://max-green-api-chat-eight.vercel.app
+
 ## Запуск
 
 ```bash
@@ -36,7 +40,7 @@ npm run preview
 ## Как пользоваться
 
 1. В [консоли GREEN-API](https://console.green-api.com/) создайте или выберите инстанс MAX и авторизуйте его (QR / 2FA).
-2. Скопируйте `idInstance`, `apiTokenInstance` и `apiUrl`.
+2. Скопируйте `idInstance`, `apiTokenInstance` и `apiUrl` именно с карточки инстанса. Общий хост `https://api.greenapi.com` подходит не всегда.
 3. Войдите в приложение и создайте чат по номеру (11 цифр для РФ `7…`, 12 для РБ `375…`).
 4. Отправьте сообщение. Ответ собеседника из MAX появится в чате после получения уведомления.
 
@@ -54,7 +58,7 @@ npm run preview
 - `src/features/chat/` — чат, polling, UI
 - `src/features/chat/use-notifications.ts` — long polling входящих сообщений
 
-В режиме разработки запросы к `https://api.greenapi.com` проксируются через Vite (`/green-api`), чтобы обойти ограничения CORS в браузере.
+Запросы к GREEN-API идут через свой прокси `/api/proxy`: локально его поднимает Vite, на опубликованном сайте — функция Vercel. Так браузер не упирается в CORS. В репозиторий не попадают `idInstance` и `apiTokenInstance`.
 
 ## Безопасность
 
